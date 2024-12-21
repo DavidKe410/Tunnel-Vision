@@ -22,4 +22,4 @@ Notes:
 5. Finished testing multiple SDM15 ToF Sensors at one time through multiple hardware serials
      - Pin numbers for Teensy Hardware Serials: https://www.pjrc.com/teensy/td_uart.html
      - SDM15 Datasheet: https://github.com/May-DFRobot/DFRobot/blob/master/SEN0588-Data_Sheet_V0.1.2_(230228).pdf
-     - M
+     - SDM15 Driver/Library: https://github.com/being24/YDLIDAR-SDM15_arduino/tree/main
