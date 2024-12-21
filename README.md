@@ -7,12 +7,14 @@ Acronyms:
 - CAD: Computer Aided Design
 - UAS: Unmanned aerial system
 - GPS: Global Positioning System
+- ToF: Time of flight
 
 TODO:
 1. Create the structure around FV components
 2. Test components and create calibration or initial setup procedures?
 3. Test Telemetry radio with all other components
-4. Test all sensing devices, recording all data, and see sampling rate
+        - Radio works with the ToF data
+5. Test all sensing devices, recording all data, and see sampling rate
 
 Notes:
 1. Finished CADing potential FV control parts and layed most of them out in a possible configuration
