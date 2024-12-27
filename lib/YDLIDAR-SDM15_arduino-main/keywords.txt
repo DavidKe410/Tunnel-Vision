@@ -1,0 +1,38 @@
+#######################################
+# Syntax Coloring Map For SDM15
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+SDM15	KEYWORD1
+VersionInfo	KEYWORD1
+TestResult	KEYWORD1
+ScanData	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+CalculateChecksum	KEYWORD2
+ClearBuffer	KEYWORD2
+ObtainVersionInfo	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+PACKET_HED1	LITERAL1
+PACKET_HED2	LITERAL1
+START_SCAN	LITERAL1
+STOP_SCAN	LITERAL1
+GET_DEVICE_INFO	LITERAL1
+SELF_TEST	LITERAL1
+SET_OUTPUT_FREQ	LITERAL1
+SET_FILTER	LITERAL1
+SET_SERIAL_BAUD	LITERAL1
+SET_FORMAT_OUTPUT_DATA	LITERAL1
+RESTORE_FACTORY_SETTINGS	LITERAL1
+NO_DATA	LITERAL1
+
