@@ -26,3 +26,6 @@ Notes:
      - Pin numbers for Teensy Hardware Serials: https://www.pjrc.com/teensy/td_uart.html
      - SDM15 Datasheet: https://github.com/May-DFRobot/DFRobot/blob/master/SEN0588-Data_Sheet_V0.1.2_(230228).pdf
      - SDM15 Driver/Library: https://github.com/being24/YDLIDAR-SDM15_arduino/tree/main
+6. Optimizing SD Card Data logging for speed
+     - https://hackingmajenkoblog.wordpress.com/2016/03/25/fast-efficient-data-storage-on-an-arduino/
+     - https://arduino.stackexchange.com/questions/28540/how-to-increase-sd-card-write-speed-in-arduino#comment111165_34857
