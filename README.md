@@ -12,6 +12,7 @@ Acronyms:
 TODO:
 1. Create the structure around FV components
      - Shrink holes for plastic tapping
+     - Replace front facing SDM15 with higher range lidar?
 3. Test components and create calibration or initial setup procedures?
 4. Test Telemetry radio with all other components
         - Radio works with the ToF data
