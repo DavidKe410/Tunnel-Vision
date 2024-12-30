@@ -11,11 +11,13 @@ Acronyms:
 
 TODO:
 1. Create the structure around FV components
-2. Test components and create calibration or initial setup procedures?
-3. Test Telemetry radio with all other components
+     - Shrink holes for plastic tapping
+3. Test components and create calibration or initial setup procedures?
+4. Test Telemetry radio with all other components
         - Radio works with the ToF data
 5. Test all sensing devices, recording all data, and see sampling rate
 6. Check out redundant IMUs if needed?
+7. 
 
 Notes:
 1. Finished CADing potential FV control parts and layed most of them out in a possible configuration
