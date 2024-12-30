@@ -85,7 +85,8 @@ void getSDM15Data(){
         distance[x] = 0;
       }else{
         distance[x] = data.distance;
-      }   
+      }
+      Serial.println("New PlatformIO");
       Serial1.print("Sensor: ");
       Serial1.print(x);
       Serial1.print(" distance: ");
