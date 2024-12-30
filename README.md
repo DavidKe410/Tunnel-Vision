@@ -29,5 +29,5 @@ Notes:
 6. Optimizing SD Card Data logging for speed
      - https://hackingmajenkoblog.wordpress.com/2016/03/25/fast-efficient-data-storage-on-an-arduino/
      - https://arduino.stackexchange.com/questions/28540/how-to-increase-sd-card-write-speed-in-arduino#comment111165_34857
-     - Write in binary, use FAT32, use Sdfat library,
-     - 4096 best write speed, 1024 not that bad. This is for FIFO SDIO
+     - Write in binary, use FAT32, use Sdfat library, use FIFO SDIO
+     - 
