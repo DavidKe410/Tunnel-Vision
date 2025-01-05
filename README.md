@@ -1,5 +1,5 @@
 # Tunnel-Vision
-Rapid mapping and state estimation through a fixed-wing UAS in a GPS-denied and featureless environment.
+Rapid mapping and state estimation through a fixed-wing UAS in a GPS-denied and potentially featureless environment.
 
 
 Acronyms:
@@ -13,12 +13,17 @@ TODO:
 1. Create the structure around FV components
      - Shrink holes for plastic tapping
      - Replace front facing SDM15 with higher range lidar?
-3. Test components and create calibration or initial setup procedures?
-4. Test Telemetry radio with all other components
+     - Add mapping system sensors
+2. Create PCB for microcontrollers and JST connectors
+     - Start with circuit diagram
+     - Prototype with perf board
+     - Design in KiCAD/Altium and order it
+4. Test components and create calibration or initial setup procedures?
+5. Test Telemetry radio with all other components
         - Radio works with the ToF data
-5. Test all sensing devices, recording all data, and see sampling rate
-6. Check out redundant IMUs if needed?
-7. 
+6. Test all sensing devices, recording all data, and see overall sampling rate
+7. Check out redundant IMUs if needed?
+8. 
 
 Notes:
 1. Finished CADing potential FV control parts and layed most of them out in a possible configuration
