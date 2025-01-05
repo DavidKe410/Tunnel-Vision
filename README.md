@@ -10,20 +10,24 @@ Acronyms:
 - ToF: Time of flight
 
 TODO:
-1. Create the structure around FV components
+1. Determine mapping sensors, model them, and place in their desired configurations
+2. Create the structure around FV + mapping components
      - Shrink holes for plastic tapping
      - Replace front facing SDM15 with higher range lidar?
-     - Add mapping system sensors
-2. Create PCB for microcontrollers and JST connectors
+3. Create PCB for microcontrollers and JST connectors
      - Start with circuit diagram
      - Prototype with perf board
      - Design in KiCAD/Altium and order it
-4. Test components and create calibration or initial setup procedures?
-5. Test Telemetry radio with all other components
+4. Make outside streamlined structure
+5. Design the aero structures
+     - And deployment methods later on
+6. Test components and create calibration or initial setup procedures?
+7. Test Telemetry radio with all other components
         - Radio works with the ToF data
-6. Test all sensing devices, recording all data, and see overall sampling rate
-7. Check out redundant IMUs if needed?
-8. 
+8. Test all sensing devices, recording all data, and see overall sampling rate
+9. Check out redundant IMUs if needed?
+10. Print, cut, assemble parts for first ground tests and then first flight
+11. Add parachute and parachute release for quickly stopping
 
 Notes:
 1. Finished CADing potential FV control parts and layed most of them out in a possible configuration
