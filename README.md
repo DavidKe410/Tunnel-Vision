@@ -28,6 +28,8 @@ TODO:
 9. Check out redundant IMUs if needed?
 10. Print, cut, assemble parts for first ground tests and then first flight
 11. Add parachute and parachute release for quickly stopping
+12. Simulate flight dynamics and program them into avionics
+13. Create LiDAR based state estimation and hallway centering algorithm 
 
 Notes:
 1. Finished CADing potential FV control parts and layed most of them out in a possible configuration
