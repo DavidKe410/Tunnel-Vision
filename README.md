@@ -10,6 +10,7 @@ Acronyms:
 - ToF: Time of flight
 
 TODO:
+- Initial placement of edfs -> increase chord length, push back rotation axis to clear for gears. Ideally no middle rack but if wide enough.
 1. Determine mapping sensors, model them, and place in their desired configurations
 2. Create the structure around FV + mapping components
      - Shrink holes for plastic tapping
