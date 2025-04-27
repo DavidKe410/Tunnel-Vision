@@ -10,6 +10,9 @@ Acronyms:
 - ToF: Time of flight
 
 TODO:
+
+Fit gears, axle and mounts, push forward?, reinforce surrounding structure?, rotation structure interface with wing
+
 1. Determine mapping sensors, model them, and place in their desired configurations
 2. Create the structure around FV + mapping components
      - Shrink holes for plastic tapping
