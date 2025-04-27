@@ -20,13 +20,8 @@ void setup(){
 }
 
 void loop(){
-  while (count > 0){
-    getSDM15Data();
-    delay(250);
-    count--;
-    Serial1.println(count);
-  }
-  cleanup();
+  getSDM15Data();
+  delay(50);
 }
 
 // put function definitions here:
@@ -44,7 +39,7 @@ void cleanup(){
 }
 
 void SDM15_setup(){
-  numSensors = 3;
+  numSensors = 2;
   distanceSensor = new SDM15*[numSensors];
 
   for (byte x = 0; x < numSensors; x++){
@@ -66,7 +61,7 @@ void SDM15_setup(){
       Serial.println(msg);
       return;
     }
-    bool result2 = distanceSensor[x]->SetOutputFrequency(Freq_500Hz);
+    bool result2 = distanceSensor[x]->SetOutputFrequency(Freq_1000Hz);
     if (!result2){
       Serial.println("Set output frequency checksum error.");
     }
@@ -86,14 +81,14 @@ void getSDM15Data(){
       }else{
         distance[x] = data.distance;
       }
-      Serial.println("New PlatformIO");
-      Serial1.print("Sensor: ");
-      Serial1.print(x);
-      Serial1.print(" distance: ");
-      Serial1.print(data.distance);
-      Serial1.print(" intensity: ");
-      Serial1.print(data.intensity);
-      Serial1.print(" disturb: ");
-      Serial1.println(data.disturb);
+      // Serial.println("New PlatformIO");
+      // Serial.print("Sensor: ");
+      // Serial.print(x);
+      // Serial.print(" distance: ");
+      // Serial.print(data.distance);
+      // Serial.print(" intensity: ");
+      // Serial.print(data.intensity);
+      // Serial.print(" disturb: ");
+      // Serial.println(data.disturb);
     }
 }

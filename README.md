@@ -6,7 +6,7 @@ Acronyms:
 - FV: Flight Vehicle
 - CAD: Computer Aided Design
 - UAS: Unmanned aerial system
-- GPS: Global Positioning System
+- GPS: Global Positioning System 
 - ToF: Time of flight
 
 TODO:
@@ -32,6 +32,9 @@ TODO:
 13. Create LiDAR based state estimation and hallway centering algorithm 
 
 Notes:
+-- To build in PlatformIO: pio run -e total-system
+-- To Upload: pio run -e total-system -t upload
+
 1. Finished CADing potential FV control parts and layed most of them out in a possible configuration
 2. Finished initial calcuations for baseline wing area and lift aerodynamics based on 4412 airfoil
 3. Finished testing Holybro Telemetry modules where we are able to receive data from the teensy on my windows laptop
