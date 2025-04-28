@@ -29,17 +29,15 @@ void loop(){
   Serial.print(ReceiverValue[2]);
   Serial.print(" Yaw [µs]: "); 
   Serial.println(ReceiverValue[3]);
+  Serial.print(" 4: ");
+  Serial.print(ReceiverValue[4]);
+  Serial.print(" 5: "); 
+  Serial.print(ReceiverValue[5]);
+  Serial.print(" 6: "); 
+  Serial.print(ReceiverValue[6]);
+  Serial.print(" 7: "); 
+  Serial.println(ReceiverValue[7]);
   delay(50);
-  HWSERIAL.print("Number of channels: ");
-  HWSERIAL.print(ChannelNumber);
-  HWSERIAL.print(" Roll [µs]: ");
-  HWSERIAL.print(ReceiverValue[0]);
-  HWSERIAL.print(" Pitch [µs]: "); 
-  HWSERIAL.print(ReceiverValue[1]);
-  HWSERIAL.print(" Throttle [µs]: "); 
-  HWSERIAL.print(ReceiverValue[2]);
-  HWSERIAL.print(" Yaw [µs]: "); 
-  HWSERIAL.println(ReceiverValue[3]);
 }
 
 void read_receiver(void){

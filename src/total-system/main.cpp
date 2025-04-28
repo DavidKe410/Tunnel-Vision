@@ -1,7 +1,9 @@
 #include <Arduino.h>
 #include <Wire.h>
+#include <PulsePosition.h>
 
 //============================================ Configuration ============================================
+//====== Airspeed Sensor ======
 #define MS4525DO_ADDR 0x28  // Default I2C address
 
 // Sensor calibration constants (Type A)
@@ -12,6 +14,13 @@ const float PRESSURE_SCALE = FULL_SCALE_PSI / (MAX_COUNTS - MIN_COUNTS);
 const float PSI_TO_PA = 6894.76;
 const float RHO = 1.225;  // air density at sea level (kg/m³)
 float offset_psi = 0;
+//====== End Airspeed Sensor ======
+
+//====== Duplex Receiver ======
+PulsePositionInput ReceiverInput(RISING);
+float ReceiverValue[]={0, 0, 0, 0, 0, 0, 0, 0};
+int ChannelNumber=0; 
+//====== End Duplex Receiver ======
 
 //========================================== End Configuration ==========================================
 
@@ -27,12 +36,13 @@ struct AirspeedData {
 
 // Struct to store Duplex receiver data
 struct DuplexData {
-    int thrust;
+    int throttle;
     int leftAileron;
     int rightAileron;
     int stabilator;
     int rudder;
-    bool manualOverride;
+    int manualOverride;
+    bool defaultValues;
 };
 
 // Struct to store BNO085 IMU data
@@ -54,8 +64,95 @@ struct AllData {
 };
 //============================================= End Data Structs ============================================
 
+// Function Declarations (Prototypes)
+void initMS4525();
+void readMS4525(AirspeedData &data);
+void readReceiver(DuplexData &data);
+
+void setup() {
+    Serial.begin(115200);
+    Wire.begin();
+    Wire.setClock(400000);  // Set I2C clock speed to 400kHz, remove if unreliability occurs
+    delay(100);
+
+    initMS4525();
+
+    ReceiverInput.begin(6); // PPM capable pin on Teensy 4.1
+}
+
+void loop() {
+    delay(1000);
+    DuplexData data;
+    readReceiver(data);
+    if (data.defaultValues) {
+        Serial.println("Default values used for receiver channels.");
+    } else {
+        Serial.print("Throttle: ");
+        Serial.print(data.throttle);
+        Serial.print(", Left Aileron: ");
+        Serial.print(data.leftAileron);
+        Serial.print(", Right Aileron: ");
+        Serial.print(data.rightAileron);
+        Serial.print(", Stabilator: ");
+        Serial.print(data.stabilator);
+        Serial.print(", Rudder: ");
+        Serial.print(data.rudder);
+        Serial.print(", Manual Override: ");
+        Serial.println(data.manualOverride);
+    }
+    // AirspeedData air;
+    // readMS4525(air);
+
+    // if (air.valid) {
+    //     Serial.print(air.pressure_pa, 5);
+    //     Serial.print(",");
+    //     Serial.print(air.airspeed_mps, 2);
+    //     Serial.print(",");
+    //     Serial.println(air.temperature_c, 2);
+    // }
+
+    delay(500);
+}
 
 //============================================ Functions ============================================
+
+void readReceiver(DuplexData &data) {
+    int available = ReceiverInput.available();
+    if (available > 0) {
+
+        int* fields[] = {
+            &data.throttle,
+            &data.leftAileron,
+            &data.rightAileron,
+            &data.stabilator,
+            &data.rudder,
+            &data.manualOverride
+        };
+
+        int defaultValues[] = {
+            1000,  // Default value for throttle
+            1500,  // leftAileron
+            1500,  // rightAileron
+            1500,  // stabilator
+            1500,  // rudder
+            1000   // manualOverride
+        };
+
+        const int numFields = sizeof(fields) / sizeof(fields[0]);
+        int channelsToRead = (available < numFields) ? available : numFields;
+
+        data.defaultValues = (channelsToRead < numFields);
+
+        for (int i = 0; i < numFields; i++) {
+            if (i < channelsToRead) {
+                *fields[i] = ReceiverInput.read(i + 1);  // Read from receiver if available
+            } else {
+                *fields[i] = defaultValues[i];  // Set default value if no channel available
+            }
+        }
+    }
+}
+
 
 //======================== Pitot-static Tube Airspeed Sensor ========================
 void readMS4525(AirspeedData &data) { // Around 2068 Hz for stnd I2C, with 400k, reaches ~7000 Hz
@@ -123,27 +220,3 @@ void initMS4525() {
 //======================== End Pitot-static Tube Airspeed Sensor ========================
 
 //============================================ End Functions ============================================
-
-void setup() {
-    Serial.begin(115200);
-    Wire.begin();
-    Wire.setClock(400000);  // Set I2C clock speed to 400kHz, remove if unreliability occurs
-    delay(100);
-    initMS4525();
-}
-
-void loop() {
-    delay(1000);
-    AirspeedData air;
-    readMS4525(air);
-
-    if (air.valid) {
-        Serial.print(air.pressure_pa, 5);
-        Serial.print(",");
-        Serial.print(air.airspeed_mps, 2);
-        Serial.print(",");
-        Serial.println(air.temperature_c, 2);
-    }
-
-    delay(500);
-}
