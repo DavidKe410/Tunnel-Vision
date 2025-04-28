@@ -18,8 +18,14 @@ float offset_psi = 0;
 
 //====== Duplex Receiver ======
 PulsePositionInput ReceiverInput(RISING);
-float ReceiverValue[]={0, 0, 0, 0, 0, 0, 0, 0};
-int ChannelNumber=0; 
+int defaultValues[] = {
+    1000,  // Default value for throttle
+    1500,  // leftAileron
+    1500,  // rightAileron
+    1500,  // stabilator
+    1500,  // rudder
+    1000   // manualOverride
+};
 //====== End Duplex Receiver ======
 
 //========================================== End Configuration ==========================================
@@ -127,15 +133,6 @@ void readReceiver(DuplexData &data) {
             &data.stabilator,
             &data.rudder,
             &data.manualOverride
-        };
-
-        int defaultValues[] = {
-            1000,  // Default value for throttle
-            1500,  // leftAileron
-            1500,  // rightAileron
-            1500,  // stabilator
-            1500,  // rudder
-            1000   // manualOverride
         };
 
         const int numFields = sizeof(fields) / sizeof(fields[0]);
