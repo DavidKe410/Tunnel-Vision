@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <PulsePosition.h>
+#include "SDM15.h"
 
 //============================================ Configuration ============================================
 //====== Airspeed Sensor ======
@@ -18,7 +19,7 @@ float offset_psi = 0;
 
 //====== Duplex Receiver ======
 PulsePositionInput ReceiverInput(RISING);
-int defaultValues[] = {
+const int defaultValues[] = {
     1000,  // Default value for throttle
     1500,  // leftAileron
     1500,  // rightAileron
@@ -27,6 +28,13 @@ int defaultValues[] = {
     1000   // manualOverride
 };
 //====== End Duplex Receiver ======
+
+//====== SDM15 ======
+HardwareSerial* COM[] = { &Serial2, &Serial3, &Serial4, &Serial5, &Serial6, &Serial7, &Serial8 };
+constexpr int numSensors = 2;
+SDM15* distanceSensor[numSensors];
+constexpr int SDM15_BAUD = 460800;
+//====== End SDM15 ======
 
 //========================================== End Configuration ==========================================
 
@@ -49,6 +57,14 @@ struct DuplexData {
     int rudder;
     int manualOverride;
     bool defaultValues;
+};
+
+// Struct to store SDM15 data
+struct SDM15Data {
+    short distance[numSensors];
+    short intensity[numSensors];
+    short disturb[numSensors];
+    bool valid[numSensors];
 };
 
 // Struct to store BNO085 IMU data
@@ -74,6 +90,8 @@ struct AllData {
 void initMS4525();
 void readMS4525(AirspeedData &data);
 void readReceiver(DuplexData &data);
+void initSDM15();
+void readSDM15(SDM15Data &data);
 
 void setup() {
     Serial.begin(115200);
@@ -84,43 +102,112 @@ void setup() {
     initMS4525();
 
     ReceiverInput.begin(6); // PPM capable pin on Teensy 4.1
+
+    initSDM15();
 }
 
 void loop() {
-    delay(1000);
-    DuplexData data;
-    readReceiver(data);
-    if (data.defaultValues) {
-        Serial.println("Default values used for receiver channels.");
-    } else {
-        Serial.print("Throttle: ");
-        Serial.print(data.throttle);
-        Serial.print(", Left Aileron: ");
-        Serial.print(data.leftAileron);
-        Serial.print(", Right Aileron: ");
-        Serial.print(data.rightAileron);
-        Serial.print(", Stabilator: ");
-        Serial.print(data.stabilator);
-        Serial.print(", Rudder: ");
-        Serial.print(data.rudder);
-        Serial.print(", Manual Override: ");
-        Serial.println(data.manualOverride);
+    unsigned long startTime = millis();
+    for (int i = 0; i < 100; i++) {
+        DuplexData data;
+        readReceiver(data);
+        if (data.defaultValues) {
+            Serial.println("Default values used for receiver channels.");
+        } else {
+            Serial.print("Throttle: ");
+            Serial.print(data.throttle);
+            Serial.print(", Left Aileron: ");
+            Serial.print(data.leftAileron);
+            Serial.print(", Right Aileron: ");
+            Serial.print(data.rightAileron);
+            Serial.print(", Stabilator: ");
+            Serial.print(data.stabilator);
+            Serial.print(", Rudder: ");
+            Serial.print(data.rudder);
+            Serial.print(", Manual Override: ");
+            Serial.println(data.manualOverride);
+        }
+        AirspeedData air;
+        readMS4525(air);
+
+        if (air.valid) {
+            Serial.print(air.pressure_pa, 5);
+            Serial.print(",");
+            Serial.print(air.airspeed_mps, 2);
+            Serial.print(",");
+            Serial.println(air.temperature_c, 2);
+        }
+        SDM15Data distances;
+        readSDM15(distances);
+        for (int x = 0; x < numSensors; x++) {
+            if (distances.valid[x]) {
+                Serial.print("Distance: ");
+                Serial.print(distances.distance[x]);
+                Serial.print(" , ");
+            }
+        }
+        Serial.println();
+        //delay(1);
     }
-    // AirspeedData air;
-    // readMS4525(air);
-
-    // if (air.valid) {
-    //     Serial.print(air.pressure_pa, 5);
-    //     Serial.print(",");
-    //     Serial.print(air.airspeed_mps, 2);
-    //     Serial.print(",");
-    //     Serial.println(air.temperature_c, 2);
-    // }
-
+    
+    unsigned long endTime = millis();
+    float averageCycleTime = (endTime - startTime) / 100.0;
+    Serial.print("Average cycle time (ms): ");
+    Serial.println(averageCycleTime);
+    Serial.print("Sampling frequency (Hz): ");
+    Serial.println(1000.0 / averageCycleTime);
     delay(500);
 }
 
 //============================================ Functions ============================================
+
+void initSDM15() {
+    for (int x = 0; x < numSensors; x++) {
+      COM[x]->begin(SDM15_BAUD);
+      distanceSensor[x] = new SDM15(*COM[x]);  // Only the ones you need
+  
+      TestResult test = distanceSensor[x]->SelfCheckTest();
+      if (test.checksum_error) {
+        Serial.print("SelfCheck checksum error: Sensor ");
+        Serial.println(x);
+        continue;
+      }
+      if (test.self_check_result) {
+        Serial.print("SelfCheck success: Sensor ");
+        Serial.println(x);
+      } else {
+        Serial.print("SelfCheck failure: Sensor ");
+        Serial.print(x);
+        Serial.print(", Error code: ");
+        Serial.println(test.self_check_error_code);
+        continue;
+      }
+  
+      if (!distanceSensor[x]->SetOutputFrequency(Freq_1000Hz)) {
+        Serial.println("Set output frequency checksum error.");
+      }
+      if (!distanceSensor[x]->StartScan()) {
+        Serial.println("Start scan checksum error.");
+      }
+    }
+}
+
+void readSDM15(SDM15Data &data) {
+    for (int x = 0; x < numSensors; x++) {
+      ScanData tempData = distanceSensor[x]->GetScanData();
+      if (tempData.checksum_error) {
+        data.valid[x] = false;
+        Serial.print("Sensor ");
+        Serial.print(x);
+        Serial.println(" checksum error, distance = 0");
+      } else {
+        data.distance[x] = tempData.distance;
+        data.intensity[x] = tempData.intensity;
+        data.disturb[x] = tempData.disturb;
+        data.valid[x] = true;
+      }
+    }
+}
 
 void readReceiver(DuplexData &data) {
     int available = ReceiverInput.available();
