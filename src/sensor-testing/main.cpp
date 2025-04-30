@@ -4,7 +4,7 @@
 HardwareSerial* COM[] = {&Serial2, &Serial3, &Serial4, &Serial5, &Serial6, &Serial7, &Serial8};
 constexpr int numSensors = 2; // <-- Set number of connected sensors here
 
-SDM15* distanceSensor[numSensors]; // Array of *pointers*, but no "new/delete" needed
+SDM15* distanceSensor[numSensors];
 
 void SDM15_setup();
 void getSDM15Data();

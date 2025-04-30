@@ -31,7 +31,7 @@ const int defaultValues[] = {
 
 //====== SDM15 ======
 HardwareSerial* COM[] = { &Serial2, &Serial3, &Serial4, &Serial5, &Serial6, &Serial7, &Serial8 };
-constexpr int numSensors = 2;
+constexpr int numSensors = 5;
 SDM15* distanceSensor[numSensors];
 constexpr int SDM15_BAUD = 460800;
 //====== End SDM15 ======
@@ -83,6 +83,7 @@ struct AllData {
     AirspeedData airspeed;
     DuplexData duplex;
     IMUData imu;
+    SDM15Data sdm15;
 };
 //============================================= End Data Structs ============================================
 
@@ -104,6 +105,8 @@ void setup() {
     ReceiverInput.begin(6); // PPM capable pin on Teensy 4.1
 
     initSDM15();
+
+
 }
 
 void loop() {
@@ -156,39 +159,51 @@ void loop() {
     Serial.println(averageCycleTime);
     Serial.print("Sampling frequency (Hz): ");
     Serial.println(1000.0 / averageCycleTime);
-    delay(500);
+    delay(1000);
 }
 
 //============================================ Functions ============================================
 
 void initSDM15() {
     for (int x = 0; x < numSensors; x++) {
-      COM[x]->begin(SDM15_BAUD);
-      distanceSensor[x] = new SDM15(*COM[x]);  // Only the ones you need
-  
-      TestResult test = distanceSensor[x]->SelfCheckTest();
-      if (test.checksum_error) {
-        Serial.print("SelfCheck checksum error: Sensor ");
-        Serial.println(x);
-        continue;
-      }
-      if (test.self_check_result) {
-        Serial.print("SelfCheck success: Sensor ");
-        Serial.println(x);
-      } else {
-        Serial.print("SelfCheck failure: Sensor ");
-        Serial.print(x);
-        Serial.print(", Error code: ");
-        Serial.println(test.self_check_error_code);
-        continue;
-      }
-  
-      if (!distanceSensor[x]->SetOutputFrequency(Freq_1000Hz)) {
-        Serial.println("Set output frequency checksum error.");
-      }
-      if (!distanceSensor[x]->StartScan()) {
-        Serial.println("Start scan checksum error.");
-      }
+        AirspeedData air;
+        Serial.println("1");
+        readMS4525(air);
+        COM[x]->begin(SDM15_BAUD);
+        Serial.println("2");
+        readMS4525(air);
+        distanceSensor[x] = new SDM15(*COM[x]);  // Only the ones you need
+        Serial.println("3");
+        readMS4525(air);
+        TestResult test = distanceSensor[x]->SelfCheckTest();
+        Serial.println("4");
+        readMS4525(air);
+        if (test.checksum_error) {
+            Serial.print("SelfCheck checksum error: Sensor ");
+            Serial.println(x);
+            continue;
+        }
+        if (!test.self_check_result) {
+            Serial.print("SelfCheck failure: Sensor ");
+            Serial.print(x);
+            Serial.print(", Error code: ");
+            Serial.println(test.self_check_error_code);
+            continue;
+        }
+        Serial.println("4.5");
+        readMS4525(air);
+        if (!distanceSensor[x]->SetOutputFrequency(Freq_500Hz)) {
+            Serial.println("Set output frequency checksum error.");
+        }
+        Serial.println("5");
+        readMS4525(air);
+        if (!distanceSensor[x]->StartScan()) {
+            Serial.println("Start scan checksum error.");
+        }
+        Serial.println("6");
+        readMS4525(air);
+        Serial.println("delay");
+        delay(5000);
     }
 }
 
@@ -199,7 +214,7 @@ void readSDM15(SDM15Data &data) {
         data.valid[x] = false;
         Serial.print("Sensor ");
         Serial.print(x);
-        Serial.println(" checksum error, distance = 0");
+        Serial.println(" checksum error");
       } else {
         data.distance[x] = tempData.distance;
         data.intensity[x] = tempData.intensity;
@@ -212,7 +227,6 @@ void readSDM15(SDM15Data &data) {
 void readReceiver(DuplexData &data) {
     int available = ReceiverInput.available();
     if (available > 0) {
-
         int* fields[] = {
             &data.throttle,
             &data.leftAileron,
@@ -240,7 +254,6 @@ void readReceiver(DuplexData &data) {
 
 //======================== Pitot-static Tube Airspeed Sensor ========================
 void readMS4525(AirspeedData &data) { // Around 2068 Hz for stnd I2C, with 400k, reaches ~7000 Hz
-
     // Request 4 bytes from the sensor
     Wire.requestFrom(MS4525DO_ADDR, 4);
     if (Wire.available() == 4) {
@@ -270,7 +283,6 @@ void readMS4525(AirspeedData &data) { // Around 2068 Hz for stnd I2C, with 400k,
         data.airspeed_mps = airspeed_mps;
         data.temperature_c = tempC;
         data.valid = true;
-
     }else {
         data.valid = false;
         Serial.println("Failed to read from airspeed sensor.");

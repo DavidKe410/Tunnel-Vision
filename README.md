@@ -11,7 +11,7 @@ Acronyms:
 
 TODO:
 
-Fit gears, axle and mounts, push forward?, reinforce surrounding structure?, rotation structure interface with wing
+
 
 1. Determine mapping sensors, model them, and place in their desired configurations
 2. Create the structure around FV + mapping components
@@ -35,7 +35,9 @@ Fit gears, axle and mounts, push forward?, reinforce surrounding structure?, rot
 13. Create LiDAR based state estimation and hallway centering algorithm 
 
 Notes:
+
 -- To build in PlatformIO: pio run -e total-system
+
 -- To Upload: pio run -e total-system -t upload
 
 1. Finished CADing potential FV control parts and layed most of them out in a possible configuration
@@ -51,3 +53,10 @@ Notes:
      - https://arduino.stackexchange.com/questions/28540/how-to-increase-sd-card-write-speed-in-arduino#comment111165_34857
      - Write in binary, use FAT32, use Sdfat library, use FIFO SDIO
      - 
+
+
+Lots of checksum errors with the SDM15 and missing updates along with the usual random dips in refresh rate. Lowest ive seem is around 270
+
+Happening on the fourth one? SEe if error repeats first ----- for 3 times in a row, just the fourth
+See if its the actual wiring - like that hardware serial proximity or smth
+See if its just the number - like doesn't matter which one, just on the fourth
