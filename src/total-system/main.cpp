@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include <PulsePosition.h>
 #include "SDM15.h"
+#include <Adafruit_BNO08x.h>
 
 //============================================ Configuration ============================================
 //====== Airspeed Sensor ======
@@ -30,11 +31,21 @@ const int defaultValues[] = {
 //====== End Duplex Receiver ======
 
 //====== SDM15 ======
-HardwareSerial* COM[] = { &Serial2, &Serial3, &Serial4, &Serial5, &Serial6, &Serial7, &Serial8 };
-constexpr int numSensors = 5;
+HardwareSerial* COM[] = { &Serial2, &Serial3, &Serial4, &Serial5, &Serial6, &Serial7};
+constexpr int numSensors = 6;
 SDM15* distanceSensor[numSensors];
 constexpr int SDM15_BAUD = 460800;
 //====== End SDM15 ======
+
+//====== BNO085 ======
+#define BNO08X_CS 10
+#define BNO08X_INT 5
+#define BNO08X_RESET 9
+Adafruit_BNO08x  bno08x(BNO08X_RESET);
+sh2_SensorValue_t sensorValue;
+sh2_SensorId_t reportType = SH2_ARVR_STABILIZED_RV;
+long reportIntervalUs = 5000;
+//====== End BNO085 ======
 
 //========================================== End Configuration ==========================================
 
@@ -75,6 +86,9 @@ struct IMUData {
     float gyro_x;
     float gyro_y;
     float gyro_z;
+    float yaw;
+    float pitch;
+    float roll;
     bool valid;
   };
 
@@ -93,6 +107,8 @@ void readMS4525(AirspeedData &data);
 void readReceiver(DuplexData &data);
 void initSDM15();
 void readSDM15(SDM15Data &data);
+void setReports(sh2_SensorId_t reportType, long report_interval);
+void readBNO085(IMUData &data);
 
 void setup() {
     Serial.begin(115200);
@@ -106,7 +122,11 @@ void setup() {
 
     initSDM15();
 
-
+    if (!bno08x.begin_SPI(BNO08X_CS, BNO08X_INT)) {
+        Serial.println("Failed to find BNO08x chip");
+        while (1) { delay(10); }
+    }
+    setReports(reportType, reportIntervalUs);
 }
 
 void loop() {
@@ -133,24 +153,39 @@ void loop() {
         AirspeedData air;
         readMS4525(air);
 
-        if (air.valid) {
-            Serial.print(air.pressure_pa, 5);
-            Serial.print(",");
-            Serial.print(air.airspeed_mps, 2);
-            Serial.print(",");
-            Serial.println(air.temperature_c, 2);
-        }
+        // if (air.valid) {
+        //     Serial.print(air.pressure_pa, 5);
+        //     Serial.print(",");
+        //     Serial.print(air.airspeed_mps, 2);
+        //     Serial.print(",");
+        //     Serial.println(air.temperature_c, 2);
+        // }
         SDM15Data distances;
         readSDM15(distances);
-        for (int x = 0; x < numSensors; x++) {
-            if (distances.valid[x]) {
-                Serial.print("Distance: ");
-                Serial.print(distances.distance[x]);
-                Serial.print(" , ");
-            }
-        }
-        Serial.println();
+        // for (int x = 0; x < numSensors; x++) {
+        //     if (distances.valid[x]) {
+        //         Serial.print("Distance: ");
+        //         Serial.print(distances.distance[x]);
+        //         Serial.print(" , ");
+        //     }
+        // }
+        // Serial.println();
         //delay(1);
+
+        IMUData imu;
+        readBNO085(imu);
+        // if(imu.valid) {
+        //     Serial.print("Yaw: ");
+        //     Serial.print(imu.yaw, 5);
+        //     Serial.print(", Pitch: ");
+        //     Serial.print(imu.pitch, 5);
+        //     Serial.print(", Roll: ");
+        //     Serial.println(imu.roll, 5);
+        // } else {
+        //     Serial.println("IMU data not valid.");
+        // }
+        int pwmValue = map(data.throttle, 1000, 2000, 0, 255); // Map throttle range to PWM range
+        analogWrite(2, pwmValue); // Write PWM signal to pin 37
     }
     
     unsigned long endTime = millis();
@@ -163,21 +198,42 @@ void loop() {
 }
 
 //============================================ Functions ============================================
+void readBNO085(IMUData &data) {
+    if (bno08x.wasReset()) {
+        Serial.print("sensor was reset ");
+        setReports(reportType, reportIntervalUs);
+    }
+    if (bno08x.getSensorEvent(&sensorValue)) {
+        if (sensorValue.sensorId == SH2_ARVR_STABILIZED_RV) {
+            data.yaw = sensorValue.un.arvrStabilizedRV.real;
+            data.pitch = sensorValue.un.arvrStabilizedRV.i;
+            data.roll = sensorValue.un.arvrStabilizedRV.j;
+            data.valid = true;
+        } else if (sensorValue.sensorId == SH2_GYRO_INTEGRATED_RV) {
+            data.yaw = sensorValue.un.gyroIntegratedRV.real;
+            data.pitch = sensorValue.un.gyroIntegratedRV.i;
+            data.roll = sensorValue.un.gyroIntegratedRV.j;
+            data.valid = true;
+        } else {
+            data.valid = false;
+        }
+    } else {
+        data.valid = false;
+    }
+}
+
+void setReports(sh2_SensorId_t reportType, long report_interval) {
+    Serial.println("Setting desired reports");
+    if (! bno08x.enableReport(reportType, report_interval)) {
+      Serial.println("Could not enable stabilized remote vector");
+    }
+}
 
 void initSDM15() {
     for (int x = 0; x < numSensors; x++) {
-        AirspeedData air;
-        Serial.println("1");
-        readMS4525(air);
         COM[x]->begin(SDM15_BAUD);
-        Serial.println("2");
-        readMS4525(air);
         distanceSensor[x] = new SDM15(*COM[x]);  // Only the ones you need
-        Serial.println("3");
-        readMS4525(air);
         TestResult test = distanceSensor[x]->SelfCheckTest();
-        Serial.println("4");
-        readMS4525(air);
         if (test.checksum_error) {
             Serial.print("SelfCheck checksum error: Sensor ");
             Serial.println(x);
@@ -190,20 +246,13 @@ void initSDM15() {
             Serial.println(test.self_check_error_code);
             continue;
         }
-        Serial.println("4.5");
-        readMS4525(air);
         if (!distanceSensor[x]->SetOutputFrequency(Freq_500Hz)) {
             Serial.println("Set output frequency checksum error.");
         }
-        Serial.println("5");
-        readMS4525(air);
         if (!distanceSensor[x]->StartScan()) {
             Serial.println("Start scan checksum error.");
         }
-        Serial.println("6");
-        readMS4525(air);
-        Serial.println("delay");
-        delay(5000);
+        delay(50);
     }
 }
 

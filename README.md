@@ -54,9 +54,10 @@ Notes:
      - Write in binary, use FAT32, use Sdfat library, use FIFO SDIO
      - 
 
+Debugging:
 
 Lots of checksum errors with the SDM15 and missing updates along with the usual random dips in refresh rate. Lowest ive seem is around 270
 
 Happening on the fourth one? SEe if error repeats first ----- for 3 times in a row, just the fourth
-See if its the actual wiring - like that hardware serial proximity or smth
+See if its the actual wiring - like that hardware serial proximity or smth ---- switched HW2 and HW5, immediately broke from the beginning - seems like smth wrong with 5 in particular
 See if its just the number - like doesn't matter which one, just on the fourth
