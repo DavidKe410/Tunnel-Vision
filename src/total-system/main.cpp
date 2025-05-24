@@ -8,6 +8,12 @@
 #include "SdFat.h"
 
 //============================================ Configuration ============================================
+
+// ======== General ========
+const short CYCLE_TIME_MS = 10; // 100 Hz
+unsigned long previousMillis = 0; // For cycle time tracking
+// ====== End General ======
+
 //====== Airspeed Sensor ======
 #define MS4525DO_ADDR 0x28  // Default I2C address
 
@@ -61,9 +67,6 @@ Servo rudder;
 
 //======= Data Logger ========
 #define SD_CONFIG SdioConfig(FIFO_SDIO)
-
-// Interval between points for 25 ksps.
-const uint32_t LOG_INTERVAL_USEC = 40;
 
 // Size to log 10 byte lines at 25 kHz for more than ten minutes.
 const size_t LOG_FILE_SIZE = 10 * 25000 * 600;  // 150,000,000 bytes.
@@ -133,7 +136,7 @@ struct AllData {
     DuplexData duplex;
     IMUData imu;
     SDM15Data sdm15;
-    short state;
+    short state = 0;
 };
 //============================================= End Data Structs ============================================
 
@@ -185,75 +188,60 @@ void setup() {
 }
 
 void loop() {
-    unsigned long startTime = millis();
-    for (int i = 0; i < 100; i++) {
-        AllData all_data;
-        readReceiver(all_data.duplex);
-        if (all_data.duplex.defaultValues) {
-            Serial.println("Default values used for receiver channels.");
-        } else {
-            Serial.print("Throttle: ");
-            Serial.print(all_data.duplex.throttle);
-            Serial.print(", Left Aileron: ");
-            Serial.print(all_data.duplex.leftAileron);
-            Serial.print(", Right Aileron: ");
-            Serial.print(all_data.duplex.rightAileron);
-            Serial.print(", Stabilator: ");
-            Serial.print(all_data.duplex.stabilator);
-            Serial.print(", Rudder: ");
-            Serial.print(all_data.duplex.rudder);
-            Serial.print(", Manual Override: ");
-            Serial.println(all_data.duplex.manualOverride);
-        }
+    AllData all_data;
 
-        readMS4525(all_data.airspeed);
+    readReceiver(all_data.duplex);
+    readMS4525(all_data.airspeed);
+    readSDM15(all_data.sdm15);
+    readBNO085(all_data.imu);
 
-        // if (air.valid) {
-        //     Serial.print(air.pressure_pa, 5);
-        //     Serial.print(",");
-        //     Serial.print(air.airspeed_mps, 2);
-        //     Serial.print(",");
-        //     Serial.println(air.temperature_c, 2);
-        // }
-        
-        readSDM15(all_data.sdm15);
-        // for (int x = 0; x < numSensors; x++) {
-        //     if (distances.valid[x]) {
-        //         Serial.print("Distance: ");
-        //         Serial.print(distances.distance[x]);
-        //         Serial.print(" , ");
-        //     }
-        // }
-        // Serial.println();
-        //delay(1);
+    esc.writeMicroseconds(all_data.duplex.throttle);
+    leftAileron.writeMicroseconds(all_data.duplex.leftAileron);
+    rightAileron.writeMicroseconds(all_data.duplex.rightAileron);
+    stabilator.writeMicroseconds(all_data.duplex.stabilator);
+    rudder.writeMicroseconds(all_data.duplex.rudder);
 
-        readBNO085(all_data.imu);
-        // if(imu.valid) {
-        //     Serial.print("Yaw: ");
-        //     Serial.print(imu.yaw, 5);
-        //     Serial.print(", Pitch: ");
-        //     Serial.print(imu.pitch, 5);
-        //     Serial.print(", Roll: ");
-        //     Serial.println(imu.roll, 5);
-        // } else {
-        //     Serial.println("IMU data not valid.");
-        // }
-        esc.writeMicroseconds(all_data.duplex.throttle);
-        leftAileron.writeMicroseconds(all_data.duplex.leftAileron);
-        rightAileron.writeMicroseconds(all_data.duplex.rightAileron);
-        stabilator.writeMicroseconds(all_data.duplex.stabilator);
-        rudder.writeMicroseconds(all_data.duplex.rudder);
-        logData(all_data);
-        Serial.println("Data logged.");
+    switch(all_data.state){
+        case 0: // Idle state
+            Serial.println("State: Idle");
+            if(all_data.duplex.manualOverride > 1500) {
+                Serial.println("Manual override active, transitioning to state 1.");
+                all_data.state = 1; // Transition to active state
+            }
+            break;
+        case 1: // Armed/Primed state
+            Serial.println("State: Armed/Primed");
+            logData(all_data); 
+            float combinedAccelMag = sqrt(pow(all_data.imu.accel_x,2) + pow(all_data.imu.accel_y,2) + pow(all_data.imu.accel_z,2));
+            if (combinedAccelMag > 20) { // Example condition to transition
+                Serial.println("Conditions met, transitioning to state 2.");
+                all_data.state = 2; // Transition to next state
+            }
+            break;
+        case 2: // Launch/Flight state
+            Serial.println("State: Launched/Flight");
+            logData(all_data);
+            if(all_data.duplex.manualOverride < 1500) {
+                Serial.println("Transitioning to state 3.");
+                all_data.state = 3;
+            }
+            break;
+        case 3: // Landing/ed state
+            Serial.println("State: Landing/ed");
+            cleanupSD(); // Cleanup SD card
+            esc.writeMicroseconds(defaultValues[0]); // Set ESC to minimum throttle
+            leftAileron.writeMicroseconds(defaultValues[1]); // Set to default values
+            rightAileron.writeMicroseconds(defaultValues[2]);
+            stabilator.writeMicroseconds(defaultValues[3]);
+            rudder.writeMicroseconds(defaultValues[4]);
+            while(true) { // Wait indefinitely after landing
+                delay(1000);
+            }
+            //break;
+        default:
+            Serial.println("Unknown State");
+            all_data.state = 3; // Just cleanup and shutdown
     }
-    
-    unsigned long endTime = millis();
-    float averageCycleTime = (endTime - startTime) / 100.0;
-    Serial.print("Average cycle time (ms): ");
-    Serial.println(averageCycleTime);
-    Serial.print("Sampling frequency (Hz): ");
-    Serial.println(1000.0 / averageCycleTime);
-    delay(5000);
 }
 
 //============================================ Functions ============================================
