@@ -11,7 +11,7 @@
 
 // ======== General ========
 const short CYCLE_TIME_MS = 10; // 100 Hz
-unsigned long previousMillis = 0; // For cycle time tracking
+
 // ====== End General ======
 
 //====== Airspeed Sensor ======
@@ -137,7 +137,7 @@ struct AllData {
     IMUData imu;
     SDM15Data sdm15;
     short state = 0;
-};
+} all_data; // Global variable to hold all data
 //============================================= End Data Structs ============================================
 
 // Function Declarations (Prototypes)
@@ -188,8 +188,7 @@ void setup() {
 }
 
 void loop() {
-    AllData all_data;
-
+    unsigned long startMillis = millis();
     readReceiver(all_data.duplex);
     readMS4525(all_data.airspeed);
     readSDM15(all_data.sdm15);
@@ -202,14 +201,16 @@ void loop() {
     rudder.writeMicroseconds(all_data.duplex.rudder);
 
     switch(all_data.state){
-        case 0: // Idle state
+        case 0: { // Idle state
             Serial.println("State: Idle");
             if(all_data.duplex.manualOverride > 1500) {
+                logData(all_data); // Log data before transition
                 Serial.println("Manual override active, transitioning to state 1.");
                 all_data.state = 1; // Transition to active state
             }
             break;
-        case 1: // Armed/Primed state
+        }
+        case 1: { // Armed/Primed state
             Serial.println("State: Armed/Primed");
             logData(all_data); 
             float combinedAccelMag = sqrt(pow(all_data.imu.accel_x,2) + pow(all_data.imu.accel_y,2) + pow(all_data.imu.accel_z,2));
@@ -218,7 +219,8 @@ void loop() {
                 all_data.state = 2; // Transition to next state
             }
             break;
-        case 2: // Launch/Flight state
+        }
+        case 2: { // Launch/Flight state
             Serial.println("State: Launched/Flight");
             logData(all_data);
             if(all_data.duplex.manualOverride < 1500) {
@@ -226,8 +228,10 @@ void loop() {
                 all_data.state = 3;
             }
             break;
-        case 3: // Landing/ed state
+        }
+        case 3: { // Landing/ed state
             Serial.println("State: Landing/ed");
+            logData(all_data);
             cleanupSD(); // Cleanup SD card
             esc.writeMicroseconds(defaultValues[0]); // Set ESC to minimum throttle
             leftAileron.writeMicroseconds(defaultValues[1]); // Set to default values
@@ -238,9 +242,14 @@ void loop() {
                 delay(1000);
             }
             //break;
+        }
         default:
             Serial.println("Unknown State");
             all_data.state = 3; // Just cleanup and shutdown
+    }
+    while(millis()-startMillis < CYCLE_TIME_MS) {
+        readBNO085(all_data.imu); // Read IMU data in the remaining time
+        // This is really just a placeholder for when we do want to mandate a specific cycle time for autonomous control.
     }
 }
 
